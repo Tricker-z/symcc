@@ -19,9 +19,13 @@
 #include <llvm/IR/ValueMap.h>
 #include <llvm/Pass.h>
 
+#define AFL_MAP_SIZE 65536
+
 class SymbolizePass : public llvm::FunctionPass {
 public:
   static char ID;
+  // Mapping from basic block to random id
+  std::unordered_map<llvm::BasicBlock *, unsigned int> basicBlockMap;
 
   SymbolizePass() : FunctionPass(ID) {}
 

@@ -15,6 +15,7 @@
 #include "Pass.h"
 
 #include <llvm/ADT/SmallVector.h>
+#include <llvm/IR/CFG.h>
 #include <llvm/IR/InstIterator.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Verifier.h>
@@ -52,6 +53,39 @@ bool SymbolizePass::doInitialization(Module &M) {
   std::tie(ctor, std::ignore) = createSanitizerCtorAndInitFunctions(
       M, kSymCtorName, "_sym_initialize", {}, {});
   appendToGlobalCtors(M, ctor, 0);
+
+  // Initialize id for each basic block
+  unsigned int randSeed;
+  char *seedStr = getenv("AFL_RAND_SEED");
+
+  if (seedStr && sscanf(seedStr, "%u", &randSeed))
+    srand(randSeed);
+  
+  for (auto &F : M)
+    for (auto &BB : F) {
+      unsigned int curLoc = (random() % AFL_MAP_SIZE);
+      basicBlockMap.insert(std::pair<BasicBlock *, unsigned int>(&BB, curLoc));
+    }
+
+  // TODO: delete the log info
+  for (auto &F : M)
+    for (auto &BB : F) {
+      if (basicBlockMap.find(&BB) == basicBlockMap.end())
+        continue;
+      // Start BB id
+      unsigned int prevLoc = basicBlockMap[&BB];
+      unsigned int curLoc, edgeId;
+
+      for (BasicBlock *succBB : successors(&BB)) {
+        if (basicBlockMap.find(succBB) == basicBlockMap.end())
+          continue;
+        // End BB id
+        curLoc = basicBlockMap[succBB];
+        edgeId = prevLoc >> 1 ^ curLoc;
+
+        errs() << edgeId << ":" << prevLoc << "," << curLoc << "\n";
+      }
+    }
 
   return true;
 }

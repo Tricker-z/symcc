@@ -24,8 +24,6 @@
 class SymbolizePass : public llvm::FunctionPass {
 public:
   static char ID;
-  // Mapping from basic block to random id
-  std::unordered_map<llvm::BasicBlock *, unsigned int> basicBlockMap;
 
   SymbolizePass() : FunctionPass(ID) {}
 
@@ -34,6 +32,9 @@ public:
 
 private:
   static constexpr char kSymCtorName[] = "__sym_ctor";
+
+  // Mapping from basic block to random id
+  std::unordered_map<llvm::BasicBlock *, unsigned int> basicBlockMap;
 
   /// Mapping from global variables to their corresponding symbolic expressions.
   llvm::ValueMap<llvm::GlobalVariable *, llvm::GlobalVariable *>

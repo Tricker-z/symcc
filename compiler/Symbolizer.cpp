@@ -337,6 +337,10 @@ void Symbolizer::handleFunctionCall(CallBase &I, Instruction *returnPoint) {
   }
 }
 
+void Symbolizer::setBasicBlockMap(std::unordered_map<llvm::BasicBlock *, unsigned int> *blkMapPtr) {
+  this->blkMapPtr = blkMapPtr;
+}
+
 void Symbolizer::visitBinaryOperator(BinaryOperator &I) {
   // Binary operators propagate into the symbolic expression.
 
@@ -418,10 +422,21 @@ void Symbolizer::visitBranchInst(BranchInst &I) {
     return;
 
   IRBuilder<> IRB(&I);
-  auto runtimeCall = buildRuntimeCall(IRB, runtime.pushPathConstraint,
-                                      {{I.getCondition(), true},
-                                       {I.getCondition(), false},
-                                       {getTargetPreferredInt(&I), false}});
+  auto *int16T = IRB.getInt16Ty();
+
+  auto runtimeCall = buildRuntimeCall(
+      IRB, runtime.crackPathConstraint,
+      {{I.getCondition(), true},
+       {I.getCondition(), false},
+       {ConstantInt::get(int16T, blkMapPtr->at(I.getParent())), false},
+       {ConstantInt::get(int16T, blkMapPtr->at(I.getSuccessor(0))), false},
+       {ConstantInt::get(int16T, blkMapPtr->at(I.getSuccessor(1))), false}});
+  
+  // auto runtimeCall = buildRuntimeCall(IRB, runtime.pushPathConstraint,
+  //                                     {{I.getCondition(), true},
+  //                                      {I.getCondition(), false},
+  //                                      {getTargetPreferredInt(&I), false}});
+
   registerSymbolicComputation(runtimeCall);
 }
 

@@ -67,26 +67,6 @@ bool SymbolizePass::doInitialization(Module &M) {
       basicBlockMap.insert(std::pair<BasicBlock *, unsigned int>(&BB, curLoc));
     }
 
-  // TODO: delete the log info
-  for (auto &F : M)
-    for (auto &BB : F) {
-      if (basicBlockMap.find(&BB) == basicBlockMap.end())
-        continue;
-      // Start BB id
-      unsigned int prevLoc = basicBlockMap[&BB];
-      unsigned int curLoc, edgeId;
-
-      for (BasicBlock *succBB : successors(&BB)) {
-        if (basicBlockMap.find(succBB) == basicBlockMap.end())
-          continue;
-        // End BB id
-        curLoc = basicBlockMap[succBB];
-        edgeId = prevLoc >> 1 ^ curLoc;
-
-        errs() << edgeId << ":" << prevLoc << "," << curLoc << "\n";
-      }
-    }
-
   return true;
 }
 
@@ -104,6 +84,8 @@ bool SymbolizePass::runOnFunction(Function &F) {
     allInstructions.push_back(&I);
 
   Symbolizer symbolizer(*F.getParent());
+
+  symbolizer.setBasicBlockMap(&basicBlockMap);
   symbolizer.symbolizeFunctionArguments(F);
 
   for (auto &basicBlock : F)

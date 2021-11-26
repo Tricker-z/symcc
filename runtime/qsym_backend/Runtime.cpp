@@ -289,6 +289,19 @@ void _sym_push_path_constraint(SymExpr constraint, int taken,
   g_solver->addJcc(allocatedExpressions.at(constraint), taken != 0, site_id);
 }
 
+
+void _sym_crack_path_constraint(SymExpr constraint, int taken,
+                                uint16_t curLoc, uint16_t succTrue, uint16_t succFalse) {
+    if (constraint == nullptr)
+      return;
+    
+    // TODO: delete the log info
+    printf("[DEBUG]%d:%d,%d\n", curLoc >> 1 ^ succTrue,  curLoc, succTrue);
+    printf("[DEBUG]%d:%d,%d\n", curLoc >> 1 ^ succFalse, curLoc, succFalse);
+
+}
+
+
 SymExpr _sym_get_input_byte(size_t offset) {
   return registerExpression(g_expr_builder->createRead(offset));
 }

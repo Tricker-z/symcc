@@ -51,6 +51,7 @@ struct Runtime {
   SymFnT buildBoolXor{};
   SymFnT buildBoolToBits{};
   SymFnT pushPathConstraint{};
+  SymFnT crackPathConstraint{};
   SymFnT getParameterExpression{};
   SymFnT setParameterExpression{};
   SymFnT setReturnExpression{};

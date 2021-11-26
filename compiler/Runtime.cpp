@@ -39,6 +39,7 @@ Runtime::Runtime(Module &M) {
   auto *intPtrType = M.getDataLayout().getIntPtrType(M.getContext());
   auto *ptrT = IRB.getInt8PtrTy();
   auto *int8T = IRB.getInt8Ty();
+  auto *int16T = IRB.getInt16Ty();
   auto *voidT = IRB.getVoidTy();
 
   buildInteger = import(M, "_sym_build_integer", ptrT, IRB.getInt64Ty(), int8T);
@@ -72,6 +73,8 @@ Runtime::Runtime(Module &M) {
   buildBoolToBits = import(M, "_sym_build_bool_to_bits", ptrT, ptrT, int8T);
   pushPathConstraint = import(M, "_sym_push_path_constraint", voidT, ptrT,
                               IRB.getInt1Ty(), intPtrType);
+  crackPathConstraint = import(M, "_sym_crack_path_constraint", voidT, ptrT, IRB.getInt1Ty(),
+                               int16T, int16T, int16T);
 
   setParameterExpression =
       import(M, "_sym_set_parameter_expression", voidT, int8T, ptrT);

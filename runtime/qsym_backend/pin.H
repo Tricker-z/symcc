@@ -27,6 +27,7 @@
 using namespace std;
 
 typedef uint8_t UINT8;
+typedef uint16_t UINT16;
 typedef unsigned int USIZE;
 typedef unsigned int UINT;
 typedef int INT;

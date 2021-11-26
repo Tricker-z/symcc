@@ -39,6 +39,11 @@ struct Config {
   /// locations across multiple program executions.
   std::string aflCoverageMap = "";
 
+  /// Initialize the path of crack bitmap
+  ///
+  /// Specifying the target branches to nagate
+  std::string crackMap = "";
+
   /// The garbage collection threshold.
   ///
   /// We will start collecting unused symbolic expressions if the total number

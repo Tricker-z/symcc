@@ -173,7 +173,7 @@ void _sym_initialize(void) {
 
   g_z3_context = new z3::context{};
   g_solver =
-      new Solver(inputFileName, g_config.outputDir, g_config.aflCoverageMap);
+      new Solver(inputFileName, g_config.outputDir, g_config.aflCoverageMap, g_config.crackMap);
   g_expr_builder = g_config.pruning ? PruneExprBuilder::create()
                                     : SymbolicExprBuilder::create();
 }
@@ -292,13 +292,12 @@ void _sym_push_path_constraint(SymExpr constraint, int taken,
 
 void _sym_crack_path_constraint(SymExpr constraint, int taken,
                                 uint16_t curLoc, uint16_t succTrue, uint16_t succFalse) {
-    if (constraint == nullptr)
-      return;
+  if (constraint == nullptr)
+    return;
     
-    // TODO: delete the log info
-    printf("[DEBUG]%d:%d,%d\n", curLoc >> 1 ^ succTrue,  curLoc, succTrue);
-    printf("[DEBUG]%d:%d,%d\n", curLoc >> 1 ^ succFalse, curLoc, succFalse);
-
+  uint16_t crackEdge = (taken)? curLoc >> 1 ^ succTrue : curLoc >> 1 ^ succFalse;
+    
+  g_solver->crackJcc(allocatedExpressions.at(constraint), taken != 0, crackEdge);
 }
 
 

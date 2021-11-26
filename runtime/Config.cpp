@@ -64,6 +64,10 @@ void loadConfig() {
   auto *aflCoverageMap = getenv("SYMCC_AFL_COVERAGE_MAP");
   if (aflCoverageMap != nullptr)
     g_config.aflCoverageMap = aflCoverageMap;
+  
+  auto *crackMap = getenv("SYMCC_CRACK_MAP");
+  if (crackMap != nullptr)
+    g_config.crackMap = crackMap;
 
   auto *garbageCollectionThreshold = getenv("SYMCC_GC_THRESHOLD");
   if (garbageCollectionThreshold != nullptr) {

@@ -425,18 +425,12 @@ void Symbolizer::visitBranchInst(BranchInst &I) {
   auto *int16T = IRB.getInt16Ty();
 
   auto runtimeCall = buildRuntimeCall(
-      IRB, runtime.crackPathConstraint,
+      IRB, runtime.crackBranchConstraint,
       {{I.getCondition(), true},
        {I.getCondition(), false},
-       {ConstantInt::get(int16T, blkMapPtr->at(I.getParent())), false},
-       {ConstantInt::get(int16T, blkMapPtr->at(I.getSuccessor(0))), false},
-       {ConstantInt::get(int16T, blkMapPtr->at(I.getSuccessor(1))), false}});
+       {ConstantInt::get(int16T, getInstrumentEdge(I.getParent(), I.getSuccessor(0))), false},
+       {ConstantInt::get(int16T, getInstrumentEdge(I.getParent(), I.getSuccessor(1))), false}});
   
-  // auto runtimeCall = buildRuntimeCall(IRB, runtime.pushPathConstraint,
-  //                                     {{I.getCondition(), true},
-  //                                      {I.getCondition(), false},
-  //                                      {getTargetPreferredInt(&I), false}});
-
   registerSymbolicComputation(runtimeCall);
 }
 
@@ -796,12 +790,14 @@ void Symbolizer::visitSwitchInst(SwitchInst &I) {
   // (https://llvm.org/docs/LangRef.html#switch-instruction).
 
   IRBuilder<> IRB(&I);
+  auto *int16T = IRB.getInt16Ty();
   auto *condition = I.getCondition();
   auto *conditionExpr = getSymbolicExpression(condition);
   if (conditionExpr == nullptr)
     return;
 
   // Build a check whether we have a symbolic condition, to be used later.
+  llvm::BasicBlock *curBB = I.getParent();
   auto *haveSymbolicCondition = IRB.CreateICmpNE(
       conditionExpr, ConstantPointerNull::get(IRB.getInt8PtrTy()));
   auto *constraintBlock = SplitBlockAndInsertIfThen(haveSymbolicCondition, &I,
@@ -810,12 +806,16 @@ void Symbolizer::visitSwitchInst(SwitchInst &I) {
   // In the constraint block, we push one path constraint per case.
   IRB.SetInsertPoint(constraintBlock);
   for (auto &caseHandle : I.cases()) {
+    llvm::BasicBlock *succBB = I.getSuccessor(caseHandle.getCaseIndex());
+
     auto *caseTaken = IRB.CreateICmpEQ(condition, caseHandle.getCaseValue());
     auto *caseConstraint = IRB.CreateCall(
         runtime.comparisonHandlers[CmpInst::ICMP_EQ],
         {conditionExpr, createValueExpression(caseHandle.getCaseValue(), IRB)});
-    IRB.CreateCall(runtime.pushPathConstraint,
-                   {caseConstraint, caseTaken, getTargetPreferredInt(&I)});
+
+    IRB.CreateCall(runtime.crackSwitchConstraint,
+                   {caseConstraint, caseTaken,
+                    ConstantInt::get(int16T, getInstrumentEdge(curBB, succBB))});
   }
 }
 

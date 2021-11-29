@@ -73,8 +73,10 @@ Runtime::Runtime(Module &M) {
   buildBoolToBits = import(M, "_sym_build_bool_to_bits", ptrT, ptrT, int8T);
   pushPathConstraint = import(M, "_sym_push_path_constraint", voidT, ptrT,
                               IRB.getInt1Ty(), intPtrType);
-  crackPathConstraint = import(M, "_sym_crack_path_constraint", voidT, ptrT, IRB.getInt1Ty(),
-                               int16T, int16T, int16T);
+  crackBranchConstraint = import(M, "_sym_crack_branch_constraint", voidT, ptrT,
+                                 IRB.getInt1Ty(), int16T, int16T);
+  crackSwitchConstraint = import(M, "_sym_crack_switch_constraint", voidT, ptrT,
+                                 IRB.getInt1Ty(), int16T);                       
 
   setParameterExpression =
       import(M, "_sym_set_parameter_expression", voidT, int8T, ptrT);

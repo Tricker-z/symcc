@@ -289,17 +289,24 @@ void _sym_push_path_constraint(SymExpr constraint, int taken,
   g_solver->addJcc(allocatedExpressions.at(constraint), taken != 0, site_id);
 }
 
-
-void _sym_crack_path_constraint(SymExpr constraint, int taken,
-                                uint16_t curLoc, uint16_t succTrue, uint16_t succFalse) {
+void _sym_crack_branch_constraint(SymExpr constraint, int taken,
+                                  uint16_t trueEdge, uint16_t falseEdge) {
   if (constraint == nullptr)
     return;
-    
-  uint16_t crackEdge = (taken)? curLoc >> 1 ^ succTrue : curLoc >> 1 ^ succFalse;
+  
+  // crack the uncovered edge
+  uint16_t crackEdge = (taken)? falseEdge : trueEdge;
     
   g_solver->crackJcc(allocatedExpressions.at(constraint), taken != 0, crackEdge);
 }
 
+void _sym_crack_switch_constraint(SymExpr constraint, int taken,
+                                  uint16_t caseEdge) {
+  if (constraint == nullptr || taken != 0)
+    return;
+  
+  g_solver->crackJcc(allocatedExpressions.at(constraint), taken != 0, caseEdge);
+}
 
 SymExpr _sym_get_input_byte(size_t offset) {
   return registerExpression(g_expr_builder->createRead(offset));

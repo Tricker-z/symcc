@@ -142,9 +142,9 @@ SymExpr _sym_get_return_expression(void);
 void _sym_push_path_constraint(SymExpr constraint, int taken,
                                uintptr_t site_id);
 void _sym_crack_branch_constraint(SymExpr constraint, int taken,
-                                  uint16_t trueEdge, uint16_t falseEdge);
+                                  uint16_t prevLoc, uint16_t succTrue, uint16_t succFalse);
 void _sym_crack_switch_constraint(SymExpr constraint, int taken,
-                                  uint16_t caseEdge);
+                                  uint16_t prevLoc, uint16_t caseLoc);
 
 SymExpr _sym_get_input_byte(size_t offset);
 

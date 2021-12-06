@@ -74,9 +74,9 @@ Runtime::Runtime(Module &M) {
   pushPathConstraint = import(M, "_sym_push_path_constraint", voidT, ptrT,
                               IRB.getInt1Ty(), intPtrType);
   crackBranchConstraint = import(M, "_sym_crack_branch_constraint", voidT, ptrT,
-                                 IRB.getInt1Ty(), int16T, int16T);
+                                 IRB.getInt1Ty(), int16T, int16T, int16T);
   crackSwitchConstraint = import(M, "_sym_crack_switch_constraint", voidT, ptrT,
-                                 IRB.getInt1Ty(), int16T);                       
+                                 IRB.getInt1Ty(), int16T, int16T);                       
 
   setParameterExpression =
       import(M, "_sym_set_parameter_expression", voidT, int8T, ptrT);
@@ -160,6 +160,8 @@ Runtime::Runtime(Module &M) {
   notifyCall = import(M, "_sym_notify_call", voidT, intPtrType);
   notifyRet = import(M, "_sym_notify_ret", voidT, intPtrType);
   notifyBasicBlock = import(M, "_sym_notify_basic_block", voidT, intPtrType);
+  
+  aflPrevLoc = M.getOrInsertGlobal("__afl_prev_loc", int16T);
 }
 
 /// Decide whether a function is called symbolically.

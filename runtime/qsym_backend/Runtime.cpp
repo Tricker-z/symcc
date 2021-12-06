@@ -63,6 +63,9 @@
 #include <LibcWrappers.h>
 #include <Shadow.h>
 
+
+#define edge(x, y) (x >> 1 ^ y)
+
 namespace qsym {
 
 ExprBuilder *g_expr_builder;
@@ -290,22 +293,24 @@ void _sym_push_path_constraint(SymExpr constraint, int taken,
 }
 
 void _sym_crack_branch_constraint(SymExpr constraint, int taken,
-                                  uint16_t trueEdge, uint16_t falseEdge) {
+                                  uint16_t prevLoc, uint16_t succTrue, uint16_t succFalse) {
   if (constraint == nullptr)
     return;
   
   // crack the uncovered edge
-  uint16_t crackEdge = (taken)? falseEdge : trueEdge;
+  uint16_t crackEdge = (taken)? edge(prevLoc, succFalse) : edge(prevLoc, succTrue);
     
   g_solver->crackJcc(allocatedExpressions.at(constraint), taken != 0, crackEdge);
 }
 
 void _sym_crack_switch_constraint(SymExpr constraint, int taken,
-                                  uint16_t caseEdge) {
+                                  uint16_t prevLoc, uint16_t caseLoc) {
   if (constraint == nullptr || taken != 0)
     return;
   
-  g_solver->crackJcc(allocatedExpressions.at(constraint), taken != 0, caseEdge);
+  uint16_t crackEdge = edge(prevLoc, caseLoc);
+
+  g_solver->crackJcc(allocatedExpressions.at(constraint), taken != 0, crackEdge);
 }
 
 SymExpr _sym_get_input_byte(size_t offset) {

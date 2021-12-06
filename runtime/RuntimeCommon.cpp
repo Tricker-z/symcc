@@ -33,6 +33,8 @@ std::array<SymExpr, kMaxFunctionArguments> g_function_arguments;
 
 } // namespace
 
+uint16_t __afl_prev_loc;
+
 void _sym_set_return_expression(SymExpr expr) { g_return_value = expr; }
 
 SymExpr _sym_get_return_expression(void) {

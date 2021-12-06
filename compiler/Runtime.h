@@ -68,6 +68,9 @@ struct Runtime {
   SymFnT notifyRet{};
   SymFnT notifyBasicBlock{};
 
+  /// Global AFL previous location
+  llvm::Constant *aflPrevLoc;
+
   /// Mapping from icmp predicates to the functions that build the corresponding
   /// symbolic expressions.
   std::array<SymFnT, llvm::CmpInst::BAD_ICMP_PREDICATE>

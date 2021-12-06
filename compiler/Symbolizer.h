@@ -303,12 +303,6 @@ private:
   uint64_t aggregateMemberOffset(llvm::Type *aggregateType,
                                  llvm::ArrayRef<unsigned> indices) const;
   
-
-  // Compute the edge based on instrument
-  uint16_t getInstrumentEdge(llvm::BasicBlock *curBB, llvm::BasicBlock *succBB) {
-    return blkMapPtr->at(curBB) >> 1 ^ blkMapPtr->at(succBB);
-  }
-
   const Runtime runtime;
 
   /// The data layout of the currently processed module.

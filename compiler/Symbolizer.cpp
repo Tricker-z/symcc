@@ -42,6 +42,8 @@ void Symbolizer::symbolizeFunctionArguments(Function &F) {
 void Symbolizer::insertBasicBlockNotification(llvm::BasicBlock &B) {
   IRBuilder<> IRB(&*B.getFirstInsertionPt());
   IRB.CreateCall(runtime.notifyBasicBlock, getTargetPreferredInt(&B));
+  IRB.CreateStore(ConstantInt::get(IRB.getInt16Ty(), blkMapPtr->at(&B)),
+                  runtime.aflPrevLoc);
 }
 
 void Symbolizer::finalizePHINodes() {
@@ -423,13 +425,15 @@ void Symbolizer::visitBranchInst(BranchInst &I) {
 
   IRBuilder<> IRB(&I);
   auto *int16T = IRB.getInt16Ty();
+  LoadInst *prevLoc = IRB.CreateLoad(runtime.aflPrevLoc);
 
   auto runtimeCall = buildRuntimeCall(
       IRB, runtime.crackBranchConstraint,
       {{I.getCondition(), true},
        {I.getCondition(), false},
-       {ConstantInt::get(int16T, getInstrumentEdge(I.getParent(), I.getSuccessor(0))), false},
-       {ConstantInt::get(int16T, getInstrumentEdge(I.getParent(), I.getSuccessor(1))), false}});
+       {prevLoc, false},
+       {ConstantInt::get(int16T, blkMapPtr->at(I.getSuccessor(0))), false},
+       {ConstantInt::get(int16T, blkMapPtr->at(I.getSuccessor(1))), false}});
   
   registerSymbolicComputation(runtimeCall);
 }
@@ -791,13 +795,14 @@ void Symbolizer::visitSwitchInst(SwitchInst &I) {
 
   IRBuilder<> IRB(&I);
   auto *int16T = IRB.getInt16Ty();
+  LoadInst *prevLoc = IRB.CreateLoad(runtime.aflPrevLoc);
+
   auto *condition = I.getCondition();
   auto *conditionExpr = getSymbolicExpression(condition);
   if (conditionExpr == nullptr)
     return;
 
   // Build a check whether we have a symbolic condition, to be used later.
-  llvm::BasicBlock *curBB = I.getParent();
   auto *haveSymbolicCondition = IRB.CreateICmpNE(
       conditionExpr, ConstantPointerNull::get(IRB.getInt8PtrTy()));
   auto *constraintBlock = SplitBlockAndInsertIfThen(haveSymbolicCondition, &I,
@@ -814,8 +819,8 @@ void Symbolizer::visitSwitchInst(SwitchInst &I) {
         {conditionExpr, createValueExpression(caseHandle.getCaseValue(), IRB)});
 
     IRB.CreateCall(runtime.crackSwitchConstraint,
-                   {caseConstraint, caseTaken,
-                    ConstantInt::get(int16T, getInstrumentEdge(curBB, succBB))});
+                   {caseConstraint, caseTaken, prevLoc,
+                    ConstantInt::get(int16T, blkMapPtr->at(succBB))});
   }
 }
 

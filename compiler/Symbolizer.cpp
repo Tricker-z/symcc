@@ -418,10 +418,17 @@ void Symbolizer::visitBranchInst(BranchInst &I) {
     return;
 
   IRBuilder<> IRB(&I);
-  auto runtimeCall = buildRuntimeCall(IRB, runtime.pushPathConstraint,
-                                      {{I.getCondition(), true},
-                                       {I.getCondition(), false},
-                                       {getTargetPreferredInt(&I), false}});
+  auto *int16T = IRB.getInt16Ty();
+  
+  auto runtimeCall = buildRuntimeCall(
+      IRB, runtime.crackBranchConstraint,
+      {{I.getCondition(), true},
+       {I.getCondition(), false},
+       {getTargetPreferredInt(&I), false},
+       {ConstantInt::get(int16T, blkMapPtr->at(I.getParent())), false},
+       {ConstantInt::get(int16T, blkMapPtr->at(I.getSuccessor(0))), false},
+       {ConstantInt::get(int16T, blkMapPtr->at(I.getSuccessor(1))), false}});
+  
   registerSymbolicComputation(runtimeCall);
 }
 
@@ -781,6 +788,9 @@ void Symbolizer::visitSwitchInst(SwitchInst &I) {
   // (https://llvm.org/docs/LangRef.html#switch-instruction).
 
   IRBuilder<> IRB(&I);
+  auto *int16T = IRB.getInt16Ty();
+
+  auto *curBB = I.getParent();
   auto *condition = I.getCondition();
   auto *conditionExpr = getSymbolicExpression(condition);
   if (conditionExpr == nullptr)
@@ -795,12 +805,17 @@ void Symbolizer::visitSwitchInst(SwitchInst &I) {
   // In the constraint block, we push one path constraint per case.
   IRB.SetInsertPoint(constraintBlock);
   for (auto &caseHandle : I.cases()) {
+    llvm::BasicBlock *succBB = I.getSuccessor(caseHandle.getCaseIndex());
+
     auto *caseTaken = IRB.CreateICmpEQ(condition, caseHandle.getCaseValue());
     auto *caseConstraint = IRB.CreateCall(
         runtime.comparisonHandlers[CmpInst::ICMP_EQ],
         {conditionExpr, createValueExpression(caseHandle.getCaseValue(), IRB)});
-    IRB.CreateCall(runtime.pushPathConstraint,
-                   {caseConstraint, caseTaken, getTargetPreferredInt(&I)});
+
+    IRB.CreateCall(runtime.crackSwitchConstraint,
+                   {caseConstraint, caseTaken, getTargetPreferredInt(&I),
+                    ConstantInt::get(int16T, blkMapPtr->at(curBB)),
+                    ConstantInt::get(int16T, blkMapPtr->at(succBB))});
   }
 }
 

@@ -15,6 +15,7 @@
 #include "Pass.h"
 
 #include <llvm/ADT/SmallVector.h>
+#include <llvm/IR/CFG.h>
 #include <llvm/IR/InstIterator.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Verifier.h>
@@ -53,6 +54,19 @@ bool SymbolizePass::doInitialization(Module &M) {
       M, kSymCtorName, "_sym_initialize", {}, {});
   appendToGlobalCtors(M, ctor, 0);
 
+  // Initialize id for each basic block
+  unsigned int randSeed;
+  char *seedStr = getenv("AFL_RAND_SEED");
+
+  if (seedStr && sscanf(seedStr, "%u", &randSeed))
+    srand(randSeed);
+
+  for (auto &F : M)
+    for (auto &BB : F) {
+      unsigned int curLoc = (random() % AFL_MAP_SIZE);
+      basicBlockMap.insert(std::pair<BasicBlock *, unsigned int>(&BB, curLoc));
+    }
+
   return true;
 }
 
@@ -70,6 +84,8 @@ bool SymbolizePass::runOnFunction(Function &F) {
     allInstructions.push_back(&I);
 
   Symbolizer symbolizer(*F.getParent());
+
+  symbolizer.setBasicBlockMap(&basicBlockMap);
   symbolizer.symbolizeFunctionArguments(F);
 
   for (auto &basicBlock : F)

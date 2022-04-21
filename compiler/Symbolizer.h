@@ -21,6 +21,7 @@
 #include <llvm/IR/ValueMap.h>
 #include <llvm/Support/raw_ostream.h>
 #include <optional>
+#include <unordered_map>
 
 #include "Runtime.h"
 
@@ -99,6 +100,10 @@ public:
   void handleInlineAssembly(llvm::CallInst &I);
   void handleFunctionCall(llvm::CallBase &I, llvm::Instruction *returnPoint);
 
+  void setBasicBlockMap(std::unordered_map<llvm::BasicBlock *, unsigned int> *blkMapPtr) {
+    this->blkMapPtr = blkMapPtr;
+  }
+
   //
   // Implementation of InstVisitor
   //
@@ -135,6 +140,8 @@ public:
 private:
   static constexpr unsigned kExpectedMaxPHINodesPerFunction = 16;
   static constexpr unsigned kExpectedSymbolicArgumentsPerComputation = 2;
+
+  std::unordered_map<llvm::BasicBlock *, unsigned int> *blkMapPtr;
 
   /// A symbolic input.
   struct Input {

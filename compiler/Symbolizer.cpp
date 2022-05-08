@@ -805,7 +805,7 @@ void Symbolizer::visitSwitchInst(SwitchInst &I) {
   // In the constraint block, we push one path constraint per case.
   IRB.SetInsertPoint(constraintBlock);
   for (auto &caseHandle : I.cases()) {
-    llvm::BasicBlock *succBB = I.getSuccessor(caseHandle.getCaseIndex());
+    llvm::BasicBlock *succBB = I.getSuccessor(caseHandle.getSuccessorIndex());
 
     auto *caseTaken = IRB.CreateICmpEQ(condition, caseHandle.getCaseValue());
     auto *caseConstraint = IRB.CreateCall(

@@ -33,11 +33,19 @@ struct Config {
   /// Do we prune expressions on hot paths?
   bool pruning = false;
 
+  // Do we solve the path constraint?
+  bool cracking = false;
+
   /// The AFL coverage map to initialize with.
   ///
   /// Specifying a file name here allows us to track already covered program
   /// locations across multiple program executions.
   std::string aflCoverageMap = "";
+
+  /// Initialize the path of crack bitmap
+  ///
+  /// Specifying the target branches to nagate
+  std::string crackMap = "";
 
   /// The garbage collection threshold.
   ///

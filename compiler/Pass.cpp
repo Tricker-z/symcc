@@ -40,6 +40,19 @@ char SymbolizePass::ID = 0;
 bool SymbolizePass::doInitialization(Module &M) {
   DEBUG(errs() << "Symbolizer module init\n");
 
+  // Initialize id for each basic block
+  unsigned int randSeed;
+  char *seedStr = getenv("AFL_RAND_SEED");
+
+  if (seedStr && sscanf(seedStr, "%u", &randSeed))
+    srand(randSeed);
+
+  for (auto &F : M)
+    for (auto &BB : F) {
+      unsigned int curLoc = (random() % AFL_MAP_SIZE);
+      basicBlockMap.insert(std::pair<BasicBlock *, unsigned int>(&BB, curLoc));
+    }
+
   // Redirect calls to external functions to the corresponding wrappers and
   // rename internal functions.
   for (auto &function : M.functions()) {
@@ -53,19 +66,6 @@ bool SymbolizePass::doInitialization(Module &M) {
   std::tie(ctor, std::ignore) = createSanitizerCtorAndInitFunctions(
       M, kSymCtorName, "_sym_initialize", {}, {});
   appendToGlobalCtors(M, ctor, 0);
-
-  // Initialize id for each basic block
-  unsigned int randSeed;
-  char *seedStr = getenv("AFL_RAND_SEED");
-
-  if (seedStr && sscanf(seedStr, "%u", &randSeed))
-    srand(randSeed);
-
-  for (auto &F : M)
-    for (auto &BB : F) {
-      unsigned int curLoc = (random() % AFL_MAP_SIZE);
-      basicBlockMap.insert(std::pair<BasicBlock *, unsigned int>(&BB, curLoc));
-    }
 
   return true;
 }

@@ -172,8 +172,9 @@ void _sym_initialize(void) {
   }
 
   g_z3_context = new z3::context{};
-  g_solver =
-      new Solver(inputFileName, g_config.outputDir, g_config.aflCoverageMap);
+  g_solver = new Solver(inputFileName, g_config.outputDir, g_config.aflCoverageMap,
+                        g_config.crackMap, g_config.cracking);
+
   g_expr_builder = g_config.pruning ? PruneExprBuilder::create()
                                     : SymbolicExprBuilder::create();
 }
@@ -294,16 +295,20 @@ void _sym_crack_branch_constraint(SymExpr constraint, int taken, uintptr_t site_
   if (constraint == nullptr)
     return;
 
+  g_solver->addJcc(allocatedExpressions.at(constraint), taken != 0, site_id);
+
   uint16_t succLoc = (taken)? succTrue : succFalse;
-  g_solver->crackJcc(allocatedExpressions.at(constraint), taken != 0, site_id, prevLoc, succLoc);
+  g_solver->crackJcc(allocatedExpressions.at(constraint), taken != 0, prevLoc, succLoc);
 }
 
 void _sym_crack_switch_constraint(SymExpr constraint, int taken, uintptr_t site_id,
                                   uint16_t prevLoc, uint16_t caseLoc) {
   if (constraint == nullptr)
     return;
+  
+  g_solver->addJcc(allocatedExpressions.at(constraint), taken != 0, site_id);
 
-  g_solver->crackJcc(allocatedExpressions.at(constraint), taken != 0, site_id, prevLoc, caseLoc);
+  g_solver->crackJcc(allocatedExpressions.at(constraint), taken != 0, prevLoc, caseLoc);
 }
 
 SymExpr _sym_get_input_byte(size_t offset) {
